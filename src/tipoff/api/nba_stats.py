@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from tipoff.api.models import NBABoxScoreEntry, NBAPlayer, NBAStandingsEntry, NBAStatsLeader
+from tipoff.api.models import NBABoxScoreEntry, NBAPlayer, NBAStandingsEntry, NBAStatsLeader, NBATeam
 
 # Headers required by stats.nba.com to avoid 403 blocks
 _NBA_HEADERS = {

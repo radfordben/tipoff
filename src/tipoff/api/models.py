@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any
 
 
@@ -222,18 +221,14 @@ def normalize_espn_game(event: dict[str, Any]) -> NBAGame:
             if seed is not None:
                 wins = int(sc.get("wins", 0))
                 team_id = str(sc.get("id", ""))
-                if team_id == away_team.id:
-                    away_seed = seed
-                    if seed == 1:
-                        higher_seed = away_team
-                        lower_seed = home_team
-                        higher_seed_wins = wins
-                elif team_id == home_team.id:
-                    home_seed = seed
-                    if seed == 1:
-                        higher_seed = home_team
-                        lower_seed = away_team
-                        higher_seed_wins = wins
+                if team_id == away_team.id and seed == 1:
+                    higher_seed = away_team
+                    lower_seed = home_team
+                    higher_seed_wins = wins
+                elif team_id == home_team.id and seed == 1:
+                    higher_seed = home_team
+                    lower_seed = away_team
+                    higher_seed_wins = wins
 
         series = NBASeries(
             id=str(series_data.get("id", "")),
