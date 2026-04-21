@@ -47,6 +47,9 @@ class NBAClient:
     async def get_scoreboard(self, date: str | None = None) -> list[NBAGame]:
         """Fetch games for a date (YYYYMMDD format) or today.
 
+        When no date is given, ESPN returns the current day's games
+        (which may be yesterday's games if after midnight ET).
+
         Returns a list of NBAGame objects normalized from ESPN events.
         """
         endpoint = "scoreboard"
@@ -55,7 +58,12 @@ class NBAClient:
 
         data = await self._get(endpoint, cache_ttl=LIVE_CACHE_TTL)
         events = data.get("events", [])
-        return [normalize_espn_game(event) for event in events]
+        games = [normalize_espn_game(event) for event in events]
+
+        # Store the actual date ESPN returned (for schedule screen sync)
+        self._last_scoreboard_date = data.get("day", {}).get("date", "")
+
+        return games
 
     async def get_teams(self) -> list[NBATeam]:
         """Fetch all NBA teams."""

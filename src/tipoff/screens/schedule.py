@@ -106,6 +106,7 @@ class ScheduleScreen(Screen):
         self.client = client
         self.refresh_interval = refresh_interval
         self.current_date = get_nba_today()
+        self._use_nba_today = True  # Start by fetching ESPN's "now"
         self.games: list[NBAGame] = []
         self._refresh_timer: Timer | None = None
         self._countdown_timer: Timer | None = None
@@ -159,8 +160,17 @@ class ScheduleScreen(Screen):
     async def _fetch_games(self) -> None:
         """Fetch games from the ESPN API."""
         try:
-            date_str = self.current_date.strftime("%Y%m%d")
-            self.games = await self.client.get_scoreboard(date_str)
+            if self._use_nba_today:
+                # No date = ESPN returns current day's games (handles after-midnight)
+                self.games = await self.client.get_scoreboard()
+                # Sync our date to whatever ESPN returned
+                if self.client._last_scoreboard_date:
+                    date_str = self.client._last_scoreboard_date
+                    self.current_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    self._use_nba_today = False
+            else:
+                date_str = self.current_date.strftime("%Y%m%d")
+                self.games = await self.client.get_scoreboard(date_str)
             self._update_games_display()
         except Exception as e:
             self.notify(f"Error loading games: {e}", severity="error")
@@ -235,7 +245,9 @@ class ScheduleScreen(Screen):
     def _auto_refresh(self) -> None:
         """Auto-refresh games (for live updates)."""
         self._countdown = self.refresh_interval
-        if self.current_date == get_nba_today():
+        # Auto-refresh when viewing ESPN's "now" or calendar today
+        nba_today = get_nba_today()
+        if self.current_date == nba_today or self._use_nba_today:
             self._update_subtitle()
             self.client.clear_cache()
             self.load_games()
@@ -263,19 +275,21 @@ class ScheduleScreen(Screen):
 
     def action_prev_day(self) -> None:
         """Go to previous day."""
+        self._use_nba_today = False
         self.current_date -= timedelta(days=1)
         self._update_subtitle()
         self.load_games()
 
     def action_next_day(self) -> None:
         """Go to next day."""
+        self._use_nba_today = False
         self.current_date += timedelta(days=1)
         self._update_subtitle()
         self.load_games()
 
     def action_today(self) -> None:
-        """Go to today."""
-        self.current_date = get_nba_today()
+        """Go to today (ESPN's current day)."""
+        self._use_nba_today = True
         self._countdown = self.refresh_interval
         self._update_subtitle()
         self.load_games()
