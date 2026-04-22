@@ -7,6 +7,20 @@ from textual.theme import Theme
 
 from tipoff.api import NBAClient
 
+NBA_THEME = Theme(
+    name="nba",
+    primary="#1D428A",       # NBA blue
+    secondary="#C8102E",     # NBA red
+    background="#0d1117",
+    surface="#161b22",
+    foreground="#e6edf3",
+    success="#38b000",
+    warning="#ffc107",
+    error="#ff6b6b",
+    accent="#ffd700",        # NBA gold
+    dark=True,
+)
+
 
 class TipoffApp(App[None]):
     """NBA Playoff Tracker TUI."""
@@ -18,6 +32,20 @@ class TipoffApp(App[None]):
     Screen {
         background: $surface;
     }
+
+    Header {
+        background: $primary;
+        text-style: bold;
+    }
+
+    Footer {
+        background: $primary;
+    }
+
+    Footer .footer--key {
+        text-style: bold;
+        color: $accent;
+    }
     """
 
     def __init__(self, refresh_interval: int = 30) -> None:
@@ -28,21 +56,7 @@ class TipoffApp(App[None]):
     def on_mount(self) -> None:
         from tipoff.screens.schedule import ScheduleScreen
 
-        self.register_theme(
-            Theme(
-                name="nba",
-                primary="#1D428A",
-                secondary="#C8102E",
-                background="#0d1117",
-                surface="#161b22",
-                foreground="#e6edf3",
-                success="#38b000",
-                warning="#ffc107",
-                error="#ff6b6b",
-                accent="#ffd700",
-                dark=True,
-            )
-        )
+        self.register_theme(NBA_THEME)
         self.theme = "nba"
         self.push_screen(ScheduleScreen(client=self.client, refresh_interval=self.refresh_interval))
 

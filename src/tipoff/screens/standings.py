@@ -57,7 +57,9 @@ class StandingsScreen(Screen):
         width: 100%;
         height: 1;
         text-style: bold;
-        color: $accent;
+        background: $primary;
+        color: $text;
+        padding: 0 1;
         margin-bottom: 1;
     }
 
@@ -160,7 +162,7 @@ class StandingsScreen(Screen):
             table.add_columns("#", "Team", "W", "L", "PCT", "GB", "Zone")
 
             for entry in teams:
-                seed = entry.playall_seed or 0
+                seed = entry.playoff_seed or 0
                 if seed <= 6:
                     zone = "PLAYOFF"
                 elif seed <= 10:

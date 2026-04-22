@@ -13,8 +13,6 @@ from textual.widgets import DataTable, Footer, Header, Label, Static
 from tipoff.api import NBAClient
 from tipoff.api.models import NBASeries, format_period_short
 
-TABLE = DataTable
-
 
 class SeriesDetailScreen(Screen):
     """Screen showing detailed series information."""
@@ -55,7 +53,9 @@ class SeriesDetailScreen(Screen):
         width: 100%;
         height: 1;
         text-style: bold;
-        color: $primary;
+        background: $primary;
+        color: $text;
+        padding: 0 1;
         margin-top: 1;
         margin-bottom: 1;
     }

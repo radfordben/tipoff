@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import ClassVar
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
@@ -34,65 +35,26 @@ class GameScreen(Screen):
     GameScreen .score-section {
         width: 100%;
         height: auto;
-        padding: 0 2;
-        border-bottom: solid $primary;
+        padding: 1 2;
+        border-bottom: wide $primary;
+        background: $surface-darken-1;
     }
 
     GameScreen .score-box {
         width: 100%;
         height: auto;
         align: center middle;
-        padding: 1;
-    }
-
-    GameScreen .team-line {
-        width: 100%;
-        height: 1;
-    }
-
-    GameScreen .team-name {
-        width: 1fr;
-        text-style: bold;
-    }
-
-    GameScreen .team-score {
-        width: 4;
-        text-align: right;
-        text-style: bold;
-    }
-
-    GameScreen .team-record {
-        width: auto;
-        color: $text-muted;
-        padding-left: 1;
-    }
-
-    GameScreen .winning-score {
-        color: $success;
-    }
-
-    GameScreen .status-line {
-        width: 100%;
-        height: 1;
-        text-align: center;
-        color: $success;
-        text-style: bold;
-    }
-
-    GameScreen .series-line {
-        width: 100%;
-        height: 1;
-        text-align: center;
-        color: $accent;
-        text-style: italic;
+        padding: 0 1;
     }
 
     GameScreen .section-title {
         width: 100%;
         height: 1;
         text-style: bold;
-        color: $primary;
-        border-bottom: dashed $primary;
+        background: $primary;
+        color: $text;
+        padding: 0 1;
+        margin-top: 1;
         margin-bottom: 1;
     }
 
@@ -131,6 +93,31 @@ class GameScreen(Screen):
         padding: 1;
         text-align: center;
         color: $text-muted;
+        text-style: italic;
+    }
+
+    GameScreen .quarter-table {
+        width: 100%;
+        height: auto;
+        padding: 1 0;
+    }
+
+    GameScreen .series-banner {
+        width: 100%;
+        height: 1;
+        text-align: center;
+        color: $accent;
+        text-style: bold;
+        background: $surface-lighten-1;
+        padding: 0 1;
+    }
+
+    GameScreen .venue-info {
+        width: 100%;
+        height: 1;
+        text-align: center;
+        color: $text-muted;
+        text-style: italic;
     }
     """
 
@@ -150,16 +137,14 @@ class GameScreen(Screen):
             yield Static("Loading...", id="score-box", classes="score-box")
         with Horizontal(classes="content-area", id="content-area"):
             with VerticalScroll(classes="left-panel", id="left-panel"):
-                yield Label("Loading...", id="goals-section")
                 yield Label("", id="stats-section")
             with VerticalScroll(classes="right-panel", id="right-panel"):
-                yield Label("Loading...", id="pbp-section")
+                yield Label("", id="pbp-section")
         yield Footer()
 
     def on_mount(self) -> None:
         """Load game data on mount."""
         self.run_worker(self._fetch_data())
-        # Auto-refresh for live games
         if self.game.status in ("LIVE", "HALFTIME"):
             self._countdown = self.refresh_interval
             self._refresh_timer = self.set_interval(self.refresh_interval, callback=self._auto_refresh)
@@ -187,63 +172,75 @@ class GameScreen(Screen):
         self._render_content()
 
     def _render_score_box(self) -> None:
-        """Render the score display at the top."""
+        """Render the score display at the top using Rich text for alignment."""
         away = self.game.away_team
         home = self.game.home_team
-
-        # Determine winner for coloring
         away_winning = self.game.away_score > self.game.home_score
         home_winning = self.game.home_score > self.game.away_score
-
-        # Status text
         status_text = self._get_status_text()
 
-        # Build score box
-        lines = []
-        lines.append(f"  {away.abbreviation:3}  {self.game.away_score:>3}  {'*' if away_winning and self.game.status == 'FINAL' else ' '}")
-        lines.append(f"  {home.abbreviation:3}  {self.game.home_score:>3}  {'*' if home_winning and self.game.status == 'FINAL' else ' '}")
-        lines.append(f"  {status_text}")
+        # Build a Rich Text object for beautiful score display
+        score_text = Text()
 
-        # Quarter scores
+        # Away team line
+        away_style = "bold color(38 176 0)" if away_winning and self.game.status in ("LIVE", "HALFTIME") else "bold"
+        score_text.append(f"  {away.abbreviation:3}  ", style=away_style)
+        score_text.append(f"{self.game.away_score:>3}", style=away_style)
+        if away_winning and self.game.status == "FINAL":
+            score_text.append(" *", style="color(38 176 0)")
+        score_text.append("\n")
+
+        # Home team line
+        home_style = "bold color(38 176 0)" if home_winning and self.game.status in ("LIVE", "HALFTIME") else "bold"
+        score_text.append(f"  {home.abbreviation:3}  ", style=home_style)
+        score_text.append(f"{self.game.home_score:>3}", style=home_style)
+        if home_winning and self.game.status == "FINAL":
+            score_text.append(" *", style="color(38 176 0)")
+        score_text.append("\n")
+
+        # Status line
+        if self.game.status == "LIVE":
+            score_text.append(f"  {status_text}", style="bold color(38 176 0)")
+        elif self.game.status == "HALFTIME":
+            score_text.append(f"  {status_text}", style="bold color(255 193 7)")
+        elif self.game.status == "FINAL":
+            score_text.append(f"  {status_text}", style="dim")
+        else:
+            score_text.append(f"  {status_text}", style="dim")
+        score_text.append("\n")
+
+        # Quarter-by-quarter scoring
         if self.game.away_quarter_scores or self.game.home_quarter_scores:
-            q_headers = ["  ", "1", "2", "3", "4"]
+            score_text.append("\n")
+            q_labels = ["Q1", "Q2", "Q3", "Q4"]
             away_q = self.game.away_quarter_scores
             home_q = self.game.home_quarter_scores
             max_q = max(len(away_q), len(home_q))
             for i in range(5, max_q + 1):
                 ot = i - 4
-                q_headers.append("OT" if ot == 1 else f"{ot}OT")
-            q_headers.append("T")
-            header_line = " ".join(f"{h:>3}" for h in q_headers)
-            away_line = f"{away.abbreviation:>3}" + "".join(f"{s:>3}" for s in away_q) + f"{self.game.away_score:>4}"
-            home_line = f"{home.abbreviation:>3}" + "".join(f"{s:>3}" for s in home_q) + f"{self.game.home_score:>4}"
-            lines.append("")
-            lines.append(header_line)
-            lines.append(away_line)
-            lines.append(home_line)
+                q_labels.append("OT" if ot == 1 else f"{ot}OT")
+            q_labels.append("TOT")
 
-        # Series info
-        if self.game.series and self.game.series.summary:
-            lines.append("")
-            lines.append(f"  {self.game.series.summary}")
+            header = f"  {'':3}  " + " ".join(f"{lbl:>3}" for lbl in q_labels)
+            away_line = f"  {away.abbreviation:3}  " + " ".join(f"{s:>3}" for s in away_q) + f" {self.game.away_score:>3}"
+            home_line = f"  {home.abbreviation:3}  " + " ".join(f"{s:>3}" for s in home_q) + f" {self.game.home_score:>3}"
+
+            score_text.append(header + "\n", style="dim")
+            score_text.append(away_line + "\n", style=away_style)
+            score_text.append(home_line, style=home_style)
 
         try:
             score_box = self.query_one("#score-box", Static)
-            score_box.update("\n".join(lines))
+            score_box.update(score_text)
         except Exception:
             pass
 
     def _render_content(self) -> None:
-        """Render the main content area (left panel: stats, right panel: play-by-play)."""
+        """Render the main content area."""
         width = self.size.width
-
-        # Stats section
         self._render_stats()
-
-        # Play-by-play section
         self._render_pbp()
 
-        # Adjust layout based on width
         try:
             content = self.query_one("#content-area", Horizontal)
             left = self.query_one("#left-panel", VerticalScroll)
@@ -265,15 +262,12 @@ class GameScreen(Screen):
     def _render_stats(self) -> None:
         """Render the team stats comparison section."""
         stats_widget = self.query_one("#stats-section", Label)
-        # Stats come from the ESPN summary or nba_api box score
-        # For now, show a placeholder until we have detailed stats
         stats_widget.update("")
 
     def _render_pbp(self) -> None:
         """Render the play-by-play section."""
         pbp_widget = self.query_one("#pbp-section", Label)
-        # Play-by-play will be populated from the summary data
-        pbp_widget.update("Play-by-play loading...")
+        pbp_widget.update("")
 
     def _get_status_text(self) -> str:
         """Get the game status text."""
@@ -310,10 +304,12 @@ class GameScreen(Screen):
 
     def _update_subtitle(self) -> None:
         """Update the subtitle with refresh countdown."""
+        away = self.game.away_team.abbreviation
+        home = self.game.home_team.abbreviation
         if self.game.status in ("LIVE", "HALFTIME"):
-            self.sub_title = f"{self.game.away_team.abbreviation} @ {self.game.home_team.abbreviation} | Refreshing in {self._countdown}s"
+            self.sub_title = f"{away} @ {home} | Refreshing in {self._countdown}s"
         else:
-            self.sub_title = f"{self.game.away_team.abbreviation} @ {self.game.home_team.abbreviation}"
+            self.sub_title = f"{away} @ {home}"
 
     def _update_countdown(self) -> None:
         """Update the countdown timer."""
@@ -343,11 +339,9 @@ class GameScreen(Screen):
             pass
 
     def action_back(self) -> None:
-        """Go back to the previous screen."""
         self.app.pop_screen()
 
     def action_refresh(self) -> None:
-        """Manually refresh the game."""
         self._countdown = self.refresh_interval
         self._update_subtitle()
         self.client.clear_cache()
@@ -355,5 +349,4 @@ class GameScreen(Screen):
         self.notify("Refreshed")
 
     def action_quit(self) -> None:
-        """Quit the application."""
         self.app.exit()

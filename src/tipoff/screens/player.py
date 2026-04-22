@@ -64,7 +64,9 @@ class PlayerScreen(Screen):
         width: 100%;
         height: 1;
         text-style: bold;
-        color: $primary;
+        background: $primary;
+        color: $text;
+        padding: 0 1;
         margin-top: 1;
         margin-bottom: 1;
     }

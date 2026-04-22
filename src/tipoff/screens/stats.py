@@ -45,7 +45,8 @@ class StatsScreen(Screen):
         height: 3;
         align: center middle;
         text-style: bold;
-        border-bottom: solid $primary;
+        background: $primary;
+        color: $text;
     }
 
     StatsScreen .stats-scroll {

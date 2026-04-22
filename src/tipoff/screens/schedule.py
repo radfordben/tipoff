@@ -17,8 +17,8 @@ from tipoff.api import NBAClient
 from tipoff.api.models import NBAGame
 from tipoff.widgets.game_card import GameCard
 
-# Game card width (28) + margin (1) = 29 chars per card
-CARD_WIDTH = 29
+# Game card width (34) + margin (1) = 35 chars per card
+CARD_WIDTH = 35
 
 # NBA uses Eastern Time for scheduling
 NBA_TIMEZONE = ZoneInfo("America/New_York")
@@ -58,7 +58,8 @@ class ScheduleScreen(Screen):
         height: 3;
         align: center middle;
         text-style: bold;
-        border-bottom: solid $primary;
+        color: $accent;
+        border-bottom: wide $primary;
     }
 
     ScheduleScreen .date-nav {
@@ -66,6 +67,7 @@ class ScheduleScreen(Screen):
         height: 1;
         align: center middle;
         color: $text-muted;
+        text-style: italic;
     }
 
     ScheduleScreen .games-scroll {
@@ -91,6 +93,7 @@ class ScheduleScreen(Screen):
         padding: 2;
         text-align: center;
         color: $text-muted;
+        text-style: italic;
     }
 
     ScheduleScreen .loading {
@@ -98,6 +101,7 @@ class ScheduleScreen(Screen):
         height: auto;
         padding: 2;
         text-align: center;
+        color: $text-muted;
     }
     """
 
@@ -117,7 +121,7 @@ class ScheduleScreen(Screen):
         yield Header()
         yield Static(self._format_date(), classes="date-header", id="date-header")
         yield Static(
-            "Arrows: Navigate | h/l: Date | t: Today | b: Bracket | s: Standings | p: Stats | m: Teams | r: Refresh | q: Quit",
+            "h/l: Date  t: Today  b: Bracket  s: Standings  p: Stats  m: Teams  r: Refresh  q: Quit",
             classes="date-nav",
         )
         with VerticalScroll(classes="games-scroll", id="games-scroll"), Vertical(classes="games-grid", id="games-grid"):

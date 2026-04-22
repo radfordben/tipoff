@@ -41,15 +41,17 @@ class GameCard(Widget):
 
     DEFAULT_CSS = """
     GameCard {
-        width: 28;
-        height: 6;
-        border: solid $primary;
+        width: 34;
+        height: 7;
+        border: round $primary;
         padding: 0 1;
-        margin: 0 1 0 0;
+        margin: 0 1 1 0;
+        background: $surface;
     }
 
     GameCard:hover {
-        border: solid $secondary;
+        border: round $secondary;
+        background: $surface-lighten-1;
     }
 
     GameCard:focus {
@@ -57,7 +59,8 @@ class GameCard(Widget):
     }
 
     GameCard.-live {
-        border: solid $success;
+        border: round $success;
+        background: $surface-darken-1;
     }
 
     GameCard.-live:focus {
@@ -65,7 +68,8 @@ class GameCard(Widget):
     }
 
     GameCard.-final {
-        border: solid $surface;
+        border: round $surface-lighten-2;
+        background: $surface;
     }
 
     GameCard.-final:focus {
@@ -73,7 +77,7 @@ class GameCard(Widget):
     }
 
     GameCard.-halftime {
-        border: solid $warning;
+        border: round $warning;
     }
 
     GameCard .team-row {
@@ -81,13 +85,20 @@ class GameCard(Widget):
         height: 1;
     }
 
-    GameCard .team-name {
+    GameCard .team-abbr {
+        width: 4;
+        text-style: bold;
+    }
+
+    GameCard .team-city {
         width: 1fr;
+        color: $text-muted;
     }
 
     GameCard .team-score {
-        width: 3;
+        width: 4;
         text-align: right;
+        text-style: bold;
     }
 
     GameCard .game-status {
@@ -95,14 +106,21 @@ class GameCard(Widget):
         height: 1;
         text-align: center;
         color: $text-muted;
+        text-style: italic;
     }
 
     GameCard.-live .game-status {
         color: $success;
+        text-style: bold;
     }
 
     GameCard.-halftime .game-status {
         color: $warning;
+        text-style: bold;
+    }
+
+    GameCard.-final .game-status {
+        color: $text-muted;
     }
 
     GameCard .series-info {
@@ -110,6 +128,17 @@ class GameCard(Widget):
         height: 1;
         text-align: center;
         color: $accent;
+    }
+
+    GameCard .winning {
+        color: $success;
+    }
+
+    GameCard .broadcast {
+        width: 100%;
+        height: 1;
+        text-align: center;
+        color: $text-muted;
         text-style: italic;
     }
     """
@@ -128,29 +157,42 @@ class GameCard(Widget):
         self.game = game
 
     def compose(self) -> ComposeResult:
-        away_abbrev = self.game.away_team.abbreviation or "???"
-        home_abbrev = self.game.home_team.abbreviation or "???"
-
+        away = self.game.away_team
+        home = self.game.home_team
         show_score = self.game.status not in ("FUT",)
 
-        away_score = str(self.game.away_score) if show_score and self.game.away_score is not None else ""
-        home_score = str(self.game.home_score) if show_score and self.game.home_score is not None else ""
-
-        status = self._get_status_text()
+        away_score = str(self.game.away_score) if show_score else ""
+        home_score = str(self.game.home_score) if show_score else ""
+        away_winning = show_score and self.game.away_score > self.game.home_score
+        home_winning = show_score and self.game.home_score > self.game.away_score
 
         with Vertical():
+            # Away team row
             with Horizontal(classes="team-row"):
-                yield Label(away_abbrev, classes="team-name")
-                yield Label(away_score, classes="team-score")
+                yield Label(away.abbreviation or "???", classes="team-abbr")
+                yield Label(away.city or "", classes="team-city")
+                score_class = "team-score winning" if away_winning else "team-score"
+                yield Label(away_score, classes=score_class)
+
+            # Home team row
             with Horizontal(classes="team-row"):
-                yield Label(home_abbrev, classes="team-name")
-                yield Label(home_score, classes="team-score")
-            yield Static(status, classes="game-status")
-            # Show series info during playoffs
+                yield Label(home.abbreviation or "???", classes="team-abbr")
+                yield Label(home.city or "", classes="team-city")
+                score_class = "team-score winning" if home_winning else "team-score"
+                yield Label(home_score, classes=score_class)
+
+            # Status line
+            yield Static(self._get_status_text(), classes="game-status")
+
+            # Series info
             if self.game.series and self.game.series.summary:
                 yield Static(self.game.series.summary, classes="series-info")
             else:
                 yield Static("", classes="series-info")
+
+            # Broadcast info
+            if self.game.broadcasts:
+                yield Static(", ".join(self.game.broadcasts[:2]), classes="broadcast")
 
     def _get_status_text(self) -> str:
         """Get the status text for the game."""

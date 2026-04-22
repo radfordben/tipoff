@@ -23,16 +23,18 @@ class SeriesCard(Widget):
 
     DEFAULT_CSS = """
     SeriesCard {
-        width: 28;
+        width: 30;
         height: auto;
-        min-height: 3;
-        border: solid $primary;
+        min-height: 4;
+        border: round $primary;
         padding: 0 1;
         margin: 0 1 1 0;
+        background: $surface;
     }
 
     SeriesCard:hover {
-        border: solid $secondary;
+        border: round $secondary;
+        background: $surface-lighten-1;
     }
 
     SeriesCard:focus {
@@ -40,11 +42,12 @@ class SeriesCard(Widget):
     }
 
     SeriesCard.-completed {
-        border: solid $surface;
+        border: round $surface-lighten-2;
     }
 
     SeriesCard.-live {
-        border: solid $success;
+        border: round $success;
+        background: $surface-darken-1;
     }
 
     SeriesCard .series-team {
@@ -57,15 +60,18 @@ class SeriesCard(Widget):
         height: 1;
         text-align: center;
         color: $text-muted;
+        text-style: italic;
     }
 
     SeriesCard.-live .series-status {
         color: $success;
+        text-style: bold;
     }
 
     SeriesCard .seed {
-        width: 3;
-        color: $text-muted;
+        width: 4;
+        color: $accent;
+        text-style: bold;
     }
 
     SeriesCard .team-abbr {
@@ -159,7 +165,9 @@ class BracketWidget(Widget):
         width: 100%;
         height: 1;
         text-style: bold;
-        color: $primary;
+        background: $primary;
+        color: $text;
+        padding: 0 1;
         margin-bottom: 1;
     }
 
@@ -179,6 +187,8 @@ class BracketWidget(Widget):
         height: 1;
         text-style: bold;
         color: $accent;
+        background: $surface-lighten-1;
+        padding: 0 1;
         margin-bottom: 1;
     }
     """
@@ -207,7 +217,7 @@ class BracketWidget(Widget):
 
         for round_num in sorted(rounds.keys()):
             round_label = round_names.get(round_num, f"Round {round_num}")
-            yield Static(f"── {round_label} ──", classes="round-header")
+            yield Static(f"  {round_label}  ", classes="round-header")
             with Vertical(classes="round-section"):
                 for conf_name in ("Eastern", "Western", "League"):
                     if conf_name not in rounds[round_num]:

@@ -152,7 +152,9 @@ class TeamsScreen(Screen):
         width: 100%;
         height: 1;
         text-style: bold;
-        color: $accent;
+        background: $primary;
+        color: $text;
+        padding: 0 1;
         margin: 1 0;
     }
 
